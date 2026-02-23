@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gabriela - My Star</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Montserrat:wght@300;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --magenta-vivido: #e91e63;
+            --rosa-glow: #ff4d6d;
+            --gold: #ffd700;
+            --gold-light: #fff8dc;
+            --glass: rgba(255, 255, 255, 0.12);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: radial-gradient(circle at center, #ff8fa3, #ff4d6d, #800e13);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Montserrat', sans-serif;
+            overflow: hidden;
+            transition: background 1.5s ease;
+        }
+        body.revealed {
+            background: radial-gradient(circle at center, #fff0a0, #ffd700, #b8860b);
+        }
+
+        /* ── Chuva de Corações ── */
+        .heart {
+            position: fixed;
+            top: -50px;
+            color: rgba(255,255,255,0.8);
+            filter: drop-shadow(0 0 5px rgba(255,255,255,0.4));
+            animation: fall linear infinite;
+            z-index: 1;
+            pointer-events: none;
+        }
+        @keyframes fall {
+            to { transform: translateY(110vh) rotate(360deg); }
+        }
+
+        /* ── Flash de luz total ── */
+        #flash-overlay {
+            position: fixed; inset: 0;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        #flash-overlay.flash {
+            animation: flashBurst 0.9s ease-out forwards;
+        }
+        @keyframes flashBurst {
+            0%   { opacity: 0; }
+            15%  { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* ── Partículas de explosão ── */
+        .particle {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 500;
+            animation: particleFly var(--dur) ease-out forwards;
+        }
+        @keyframes particleFly {
+            0%   { transform: translate(0,0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+
+        /* ── Card Principal — começa invisível, aparece via JS ── */
+        .main-card {
+            background: var(--glass);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 40px;
+            padding: 50px;
+            text-align: center;
+            width: 95%;
+            max-width: 900px;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.4);
+            z-index: 10;
+            position: relative;
+            opacity: 0;
+            transform: scale(0.85) translateY(40px);
+        }
+        .main-card.card-enter {
+            animation: cardEnter 1s 0.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes cardEnter {
+            from { opacity: 0; transform: scale(0.85) translateY(40px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .main-card.shatter {
+            animation: shatter 0.6s ease-in forwards !important;
+        }
+        @keyframes shatter {
+            0%   { transform: scale(1) rotate(0deg); opacity: 1; }
+            30%  { transform: scale(1.08) rotate(-1.5deg); }
+            60%  { transform: scale(0.95) rotate(2deg); opacity: 0.5; }
+            100% { transform: scale(0) rotate(20deg); opacity: 0; }
+        }
+
+        /* ── Elementos do card — todos começam invisíveis ── */
+        .svg-name-container,
+        .subtitle-wrapper,
+        .foto-celebridade,
+        #login-box { opacity: 0; }
+
+        /* ── Nome Gabriela ── */
+        .svg-name-container {
+            width: 100%; height: 120px;
+            margin-top: -3em; margin-bottom: 5em;
+        }
+        .svg-name-container.el-enter {
+            animation: elDropIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        .name-svg {
+            font-family: 'Dancing Script', cursive;
+            font-size: 90px;
+            fill: none; stroke: white; stroke-width: 1.5;
+            stroke-dasharray: 1000; stroke-dashoffset: 1000;
+            filter: drop-shadow(0 0 15px rgba(255,255,255,0.9));
+        }
+        /* drawName começa APENAS depois que o elemento entrar (via JS) */
+        .name-svg.draw {
+            animation: drawName 3.5s forwards ease-in-out;
+        }
+        @keyframes drawName {
+            to { stroke-dashoffset: 0; fill: white; }
+        }
+
+        /* ── Subtítulo typing ── */
+        .subtitle-wrapper {
+            text-align: center;
+            margin-bottom: 30px;
+            margin-top: 6px;
+        }
+        .subtitle-wrapper.el-enter {
+            animation: elRiseGlow 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        .subtitle {
+            color: #fff; font-size: 1rem; text-transform: uppercase;
+            letter-spacing: 5px;
+            font-weight: 300; white-space: nowrap;
+            overflow: hidden; width: 0;
+            border-right: 2px solid rgba(255,255,255,0.7);
+            display: inline-block;
+            opacity: 1; /* visibilidade herdada do wrapper */
+        }
+        /* typing começa via JS depois que o subtítulo entrar */
+        .subtitle.type {
+            animation:
+                typing 2.5s steps(40, end) forwards,
+                blinkCursor 0.75s step-end 7,
+                hideCursor 0.1s 2.6s forwards;
+        }
+        @keyframes typing { from { width: 0; } to { width: 100%; } }
+        @keyframes blinkCursor {
+            0%, 100% { border-color: rgba(255,255,255,0.7); }
+            50%       { border-color: transparent; }
+        }
+        @keyframes hideCursor { to { border-color: transparent; } }
+
+        /* ── Foto ── */
+        .foto-celebridade {
+            width: 200px; height: 200px;
+            margin: 0 auto 30px; border-radius: 20px; overflow: hidden;
+            border: 5px solid white;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        }
+        .foto-celebridade.el-enter {
+            animation: elPhotoSpin 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        .foto-celebridade:hover { transform: rotate(0deg) scale(1.15) !important; }
+        .foto-celebridade img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* ── Login ── */
+        #login-box p { color: white; margin-bottom: 20px; font-weight: 300; }
+        #login-box.el-enter {
+            animation: elRiseGlow 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        input {
+            background: rgba(255,255,255,0.95); border: none;
+            padding: 15px 30px; border-radius: 50px; width: 280px;
+            font-size: 1rem; margin-bottom: 20px; outline: none;
+            text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        button {
+            background: var(--magenta-vivido); color: white; border: none;
+            padding: 15px 45px; border-radius: 50px; font-weight: 600;
+            cursor: pointer; transition: 0.3s; letter-spacing: 1px;
+            box-shadow: 0 5px 15px rgba(233,30,99,0.4);
+        }
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px var(--rosa-glow);
+            filter: brightness(1.1);
+        }
+
+        /* ── Keyframes de entrada dos elementos ── */
+        @keyframes elDropIn {
+            0%   { opacity: 0; transform: translateY(-60px) scale(0.7) rotate(-8deg); filter: blur(8px); }
+            60%  { filter: blur(0); }
+            80%  { transform: translateY(8px) scale(1.04) rotate(1deg); }
+            100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+        }
+        @keyframes elRiseGlow {
+            0%   { opacity: 0; transform: translateY(50px) scale(0.8); filter: blur(6px) brightness(2); }
+            60%  { filter: blur(0) brightness(1.2); }
+            80%  { transform: translateY(-6px) scale(1.03); }
+            100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0) brightness(1); }
+        }
+        @keyframes elPhotoSpin {
+            0%   { opacity: 0; transform: scale(0) rotate(-180deg); filter: blur(10px); }
+            60%  { filter: blur(0); }
+            80%  { transform: scale(1.1) rotate(4deg); }
+            100% { opacity: 1; transform: scale(1) rotate(2deg); }
+        }
+
+        /* ══════════════════════════════════════
+           QUADRO DA DEDICATÓRIA — Pergaminho Dourado
+        ══════════════════════════════════════ */
+        #dedicatoria-semanal {
+            display: none;
+            position: fixed; inset: 0;
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+            perspective: 1400px;
+        }
+        #dedicatoria-semanal.show { display: flex; }
+
+        .dedic-backdrop {
+            position: fixed; inset: 0;
+            background: radial-gradient(ellipse at center,
+                rgba(255,200,0,0.3) 0%,
+                rgba(0,0,0,0.8) 70%);
+            animation: backdropIn 0.8s ease forwards;
+        }
+        @keyframes backdropIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        .scroll-frame {
+            background: linear-gradient(160deg, #fffef0 0%, #fff8dc 40%, #fdf0c0 70%, #fae8a0 100%);
+            border-radius: 12px;
+            padding: 55px 70px 60px;
+            max-width: 700px;
+            width: 90%;
+            position: relative;
+            z-index: 1;
+            box-shadow:
+                0 0 0 3px #c8a400,
+                0 0 0 8px #ffd700,
+                0 0 0 11px #c8a400,
+                0 0 0 18px rgba(255,215,0,0.25),
+                0 35px 90px rgba(0,0,0,0.55),
+                0 0 140px rgba(255,215,0,0.5),
+                inset 0 0 70px rgba(255,215,0,0.15);
+            text-align: center;
+            transform-origin: top center;
+            animation: scrollUnroll 1.3s 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        @keyframes scrollUnroll {
+            0%   {
+                opacity: 0;
+                transform: rotateX(-95deg) scaleY(0.05) translateY(-100px);
+                filter: blur(12px);
+            }
+            40%  { opacity: 1; filter: blur(3px); }
+            100% {
+                transform: rotateX(0deg) scaleY(1) translateY(0);
+                filter: blur(0);
+            }
+        }
+
+        /* Barra de rolo em cima e em baixo */
+        .scroll-top-roll, .scroll-bottom-roll {
+            position: absolute; left: -14px; right: -14px;
+            height: 28px;
+            background: linear-gradient(to bottom, #c8a400, #ffd700, #c8a400);
+            border-radius: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.35), 0 0 20px rgba(255,215,0,0.4);
+        }
+        .scroll-top-roll    { top: -14px; }
+        .scroll-bottom-roll { bottom: -14px; }
+
+        /* Pontas dos rolos */
+        .scroll-top-roll::before,    .scroll-top-roll::after,
+        .scroll-bottom-roll::before, .scroll-bottom-roll::after {
+            content: '';
+            position: absolute;
+            width: 28px; height: 28px;
+            background: linear-gradient(135deg, #e8b800, #ffd700, #c8a400);
+            border-radius: 50%;
+            top: 0;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+        }
+        .scroll-top-roll::before, .scroll-bottom-roll::before { left: -5px; }
+        .scroll-top-roll::after,  .scroll-bottom-roll::after  { right: -5px; }
+
+        /* Divisores dourados */
+        .gold-divider {
+            width: 80%;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #c8a400, #ffd700, #c8a400, transparent);
+            margin: 18px auto;
+            border-radius: 2px;
+            animation: dividerGrow 0.8s 1.3s ease both;
+        }
+        @keyframes dividerGrow {
+            from { transform: scaleX(0); opacity: 0; }
+            to   { transform: scaleX(1); opacity: 1; }
+        }
+
+        /* Título */
+        .scroll-frame h2 {
+            font-family: 'Dancing Script', cursive;
+            font-size: 2.9rem;
+            color: #7a5800;
+            text-shadow: 0 0 25px rgba(255,215,0,0.6), 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 0;
+            opacity: 0;
+            animation: titleAppear 0.9s 1s ease forwards;
+        }
+        @keyframes titleAppear {
+            from { opacity: 0; transform: translateY(20px); letter-spacing: 15px; }
+            to   { opacity: 1; transform: translateY(0);    letter-spacing: normal; }
+        }
+
+        /* Ícone coração central */
+        .scroll-icon {
+            font-size: 2.8rem;
+            display: block;
+            margin: 4px auto;
+            opacity: 0;
+            animation: iconPop 0.7s 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.6) forwards;
+            filter: drop-shadow(0 0 10px rgba(255,80,80,0.8));
+        }
+        @keyframes iconPop {
+            from { opacity: 0; transform: scale(0) rotate(-180deg); }
+            to   { opacity: 1; transform: scale(1) rotate(0); }
+        }
+
+        /* Texto */
+        .scroll-text {
+            font-family: 'Dancing Script', cursive;
+            font-size: 1.5rem;
+            color: #3d2800;
+            line-height: 1.9;
+            font-style: italic;
+            opacity: 0;
+            animation: textReveal 1.2s 2s ease forwards;
+        }
+        @keyframes textReveal {
+            from { opacity: 0; transform: translateY(25px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Assinatura */
+        .scroll-signature {
+            margin-top: 28px;
+            font-family: 'Dancing Script', cursive;
+            font-size: 1.3rem;
+            color: #8b6800;
+            opacity: 0;
+            animation: sigAppear 1s 3s ease forwards;
+        }
+        @keyframes sigAppear {
+            from { opacity: 0; }
+            to   { opacity: 0.95; }
+        }
+
+        /* Brilhos flutuantes sobre o pergaminho */
+        .sparkle {
+            position: absolute;
+            pointer-events: none;
+            font-size: var(--s);
+            animation: sparklePulse var(--d) var(--delay) ease-in-out infinite;
+            color: #ffd700;
+            text-shadow: 0 0 8px gold;
+            z-index: 2;
+        }
+        @keyframes sparklePulse {
+            0%, 100% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+            50%       { opacity: 1; transform: scale(1.3) rotate(180deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="flash-overlay"></div>
+<div id="rain-container"></div>
+
+<div class="main-card" id="main-card">
+    <div class="svg-name-container">
+        <svg viewBox="0 0 400 120" width="100%">
+            <text x="50%" y="80%" text-anchor="middle" class="name-svg">Gabriela</text>
+        </svg>
+    </div>
+
+    <div class="subtitle-wrapper">
+        <span class="subtitle">Para la mujer mas bella del universo</span>
+    </div>
+
+    <div class="foto-celebridade">
+        <img src="foto.jpeg" alt="Gabriela">
+    </div>
+
+    <div id="login-box">
+        <p>Coloca la contraseña que recibiste por correo</p>
+        <input type="password" id="pass" placeholder="Contraseña..."
+               onkeydown="if(event.key==='Enter') verificar()">
+        <br>
+        <button onclick="verificar()">REVELAR SORPRESA</button>
+    </div>
+</div>
+
+<!-- QUADRO DA DEDICATÓRIA -->
+<div id="dedicatoria-semanal">
+    <div class="dedic-backdrop"></div>
+    <div class="scroll-frame">
+        <div class="scroll-top-roll"></div>
+        <div class="scroll-bottom-roll"></div>
+
+        <h2>Dedicatória da Semana</h2>
+        <div class="gold-divider"></div>
+        <span class="scroll-icon">❤️</span>
+        <div class="gold-divider"></div>
+
+        <p class="scroll-text">
+            "Tu belleza solo es superada por la luz que traes a mi vida.<br>
+            Esta semana, mi único plan es amarte más que la anterior.<br>
+            Eres mi todo."
+        </p>
+        <p class="scroll-signature">— Con todo mi amor ❤️</p>
+    </div>
+</div>
+
+<script>
+    /* ── Entrada orquestrada dos elementos ── */
+    window.addEventListener('DOMContentLoaded', () => {
+        const card       = document.getElementById('main-card');
+        const nameEl     = document.querySelector('.svg-name-container');
+        const nameSvg    = document.querySelector('.name-svg');
+        const subtitleWr = document.querySelector('.subtitle-wrapper');
+        const subtitle   = document.querySelector('.subtitle');
+        const foto       = document.querySelector('.foto-celebridade');
+        const loginBox   = document.getElementById('login-box');
+
+        // 1. Card surge (0.1s)
+        setTimeout(() => card.classList.add('card-enter'), 100);
+
+        // 2. Nome cai do topo (0.9s) → depois começa a ser desenhado
+        setTimeout(() => {
+            nameEl.classList.add('el-enter');
+            // Após a animação de entrada terminar, activa o draw
+            setTimeout(() => nameSvg.classList.add('draw'), 400);
+        }, 500);
+
+        // 3. Subtítulo sobe com glow (após nome terminar ~4.8s desde load = 900+3500+400)
+        //    Mas a entrada visual já pode começar logo após o nome entrar para não ficar vazio
+        //    Estratégia: subtítulo entra aos 4.6s, e typing começa logo a seguir
+        // setTimeout(() => {
+        //     subtitleWr.classList.add('el-enter');
+        //     setTimeout(() => subtitle.classList.add('type'), 900);
+        // }, 4600);
+
+        // 4. Foto roda e aparece (após subtítulo terminar de escrever ~4.6+0.9+2.5 = ~8s)
+        setTimeout(() => foto.classList.add('el-enter'), 2600);
+
+        // 5. Login sobe com brilho
+        setTimeout(() => loginBox.classList.add('el-enter'), 3500);
+    });
+
+    /* ── Chuva de Corações ── */
+    let heartInterval = setInterval(() => createHeart(false), 300);
+    for(let i=0; i<20; i++) setTimeout(() => createHeart(false), Math.random() * 3000);
+
+    function createHeart(gold) {
+        const container = document.getElementById('rain-container');
+        const el = document.createElement('div');
+        el.classList.add('heart');
+        el.innerHTML = gold ? ['✨','💫','⭐','🌟'][Math.floor(Math.random()*4)] : '❤️';
+        el.style.left = Math.random() * 100 + 'vw';
+        const size = Math.random() * 25 + 10;
+        el.style.fontSize = size + 'px';
+        const dur = Math.random() * 3 + 4;
+        el.style.animationDuration = dur + 's';
+        el.style.opacity = Math.random() * 0.5 + 0.3;
+        container.appendChild(el);
+        setTimeout(() => el.remove(), dur * 1000);
+    }
+
+    /* ── Explosão de partículas ── */
+    function explodeParticles() {
+        const colors = ['#ff4d6d','#ffd700','#ff8fa3','#ffffff','#ffb347','#e91e63','#fff176'];
+        const emojis = ['❤️','✨','💖','🌹','💫','💕','⭐','🌟','💝','🎇'];
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2;
+
+        // Círculos coloridos
+        for(let i = 0; i < 90; i++) {
+            const p = document.createElement('div');
+            p.classList.add('particle');
+            const angle = Math.random() * 360;
+            const dist  = Math.random() * 450 + 80;
+            const rad   = angle * Math.PI / 180;
+            const size  = Math.random() * 16 + 4;
+            const dur   = (Math.random() * 0.9 + 0.4) + 's';
+            p.style.cssText = `
+                left:${cx}px; top:${cy}px;
+                width:${size}px; height:${size}px;
+                background:${colors[Math.floor(Math.random()*colors.length)]};
+                --tx:${Math.cos(rad)*dist}px; --ty:${Math.sin(rad)*dist}px; --dur:${dur};
+                box-shadow: 0 0 8px ${colors[Math.floor(Math.random()*colors.length)]};
+            `;
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 1600);
+        }
+
+        // Emojis voadores
+        for(let i = 0; i < 35; i++) {
+            const e = document.createElement('div');
+            e.classList.add('particle');
+            const angle = Math.random() * 360;
+            const dist  = Math.random() * 400 + 100;
+            const rad   = angle * Math.PI / 180;
+            const dur   = (Math.random() * 0.9 + 0.5) + 's';
+            e.style.cssText = `
+                left:${cx}px; top:${cy}px;
+                font-size:${Math.random()*22+12}px;
+                background:transparent; border-radius:0;
+                --tx:${Math.cos(rad)*dist}px; --ty:${Math.sin(rad)*dist}px; --dur:${dur};
+            `;
+            e.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+            document.body.appendChild(e);
+            setTimeout(() => e.remove(), 2200);
+        }
+    }
+
+    /* ── Brilhos no pergaminho ── */
+    function addSparkles() {
+        const frame = document.querySelector('.scroll-frame');
+        const positions = [
+            {top:'10%',  left:'4%'},   {top:'10%',  right:'4%'},
+            {top:'35%',  left:'2%'},   {top:'35%',  right:'2%'},
+            {top:'65%',  left:'2%'},   {top:'65%',  right:'2%'},
+            {bottom:'10%',left:'4%'},  {bottom:'10%',right:'4%'},
+            {top:'50%',  left:'8%'},   {top:'50%',  right:'8%'},
+        ];
+        positions.forEach((pos, i) => {
+            const s = document.createElement('span');
+            s.classList.add('sparkle');
+            s.textContent = i % 2 === 0 ? '✦' : '✧';
+            const styles = Object.entries(pos).map(([k,v])=>`${k}:${v}`).join(';');
+            s.style.cssText = `${styles}; --s:${Math.random()*10+12}px; --d:${Math.random()*1.5+0.8}s; --delay:${i*0.25}s`;
+            frame.appendChild(s);
+        });
+    }
+
+    /* ── Verificação e sequência de animação ── */
+    function verificar() {
+        const p    = document.getElementById('pass').value;
+        const card = document.getElementById('main-card');
+
+        if(p === "1234") {
+
+            // FASE 1 — Vibração intensa (8 sacudidas, 60ms cada)
+            let shakes = 0;
+            card.style.transition = 'none';
+            const shakeInterval = setInterval(() => {
+                const dx = (Math.random() - 0.5) * 14;
+                const dy = (Math.random() - 0.5) * 10;
+                const dr = (Math.random() - 0.5) * 3;
+                card.style.transform = `translate(${dx}px, ${dy}px) rotate(${dr}deg)`;
+                if(++shakes >= 10) {
+                    clearInterval(shakeInterval);
+
+                    // FASE 2 — Explosão de partículas + flash
+                    explodeParticles();
+                    document.getElementById('flash-overlay').classList.add('flash');
+
+                    // FASE 3 — Implodir card
+                    card.classList.add('shatter');
+
+                    // FASE 4 — Revelar quadro (ligeiramente após o flash)
+                    setTimeout(() => {
+                        card.style.display = 'none';
+
+                        const dedic = document.getElementById('dedicatoria-semanal');
+                        dedic.classList.add('show');
+                        addSparkles();
+
+                        // Fundo dourado
+                        document.body.classList.add('revealed');
+
+                        // Chuva dourada
+                        clearInterval(heartInterval);
+                        for(let i=0; i<50; i++) setTimeout(() => createHeart(true), i * 70);
+                        heartInterval = setInterval(() => createHeart(true), 220);
+
+                    }, 420);
+                }
+            }, 65);
+
+        } else {
+            // Sacudida de erro
+            let n = 0;
+            card.style.transition = 'transform 0.08s ease';
+            const errShake = setInterval(() => {
+                card.style.transform = `translateX(${n%2===0 ? -10 : 10}px)`;
+                if(++n >= 7) {
+                    clearInterval(errShake);
+                    card.style.transform = '';
+                }
+            }, 65);
+            setTimeout(() => alert("Esa no es nuestra clave, mi amor. ¡Revisa tu correo! ❤️"), 500);
+        }
+    }
+</script>
+</body>
+</html>
